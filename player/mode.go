@@ -1,11 +1,11 @@
 package player
 
 import (
-	"fmt"
-	"strings"
-	"log"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"log"
+	"strings"
 )
 
 var UnknownMode = errors.New("No such mode exists.")
@@ -20,18 +20,18 @@ const (
 type CmdFunc func(*Player, string) (string, error)
 
 type Command struct {
-	Name string
-	Help string
+	Name    string
+	Help    string
 	Aliases []string
-	Func CmdFunc
+	Func    CmdFunc
 }
 
 type Mode struct {
-	Id int
-	Name string
-	Desc string
-	DescFile string
-	Cmds []*Command
+	Id         int
+	Name       string
+	Desc       string
+	DescFile   string
+	Cmds       []*Command
 	DefaultCmd CmdFunc
 }
 
@@ -44,7 +44,6 @@ func NoValidCommand(p *Player, msg string) (string, error) {
 	log.Printf("[%v]\tCommand %v didn't match any of %v.", p.ShortID(), msg, allowedCmds)
 	return fmt.Sprintf("Sorry, didn't recognize that command. Try one of %v.", allowedCmds), nil
 }
-
 
 func (m *Mode) Render() string {
 	if m.Desc == "" && m.DescFile != "" {
@@ -62,7 +61,7 @@ var modes map[int]*Mode
 
 func NewQuitCmd() *Command {
 	return &Command{
-		Name :"quit",
+		Name:    "quit",
 		Aliases: []string{"exit", "q"},
 		Func: func(p *Player, cmd string) (string, error) {
 			return "See you next time.", Exited
@@ -73,7 +72,7 @@ func NewQuitCmd() *Command {
 func NewSplashMode() *Mode {
 	mode := Mode{Id: SplashMode, Name: "Splash", DescFile: "splash.txt"}
 	loginCmd := &Command{
-		Name: "login",
+		Name:    "login",
 		Aliases: []string{"l"},
 		Func: func(p *Player, cmd string) (string, error) {
 			return p.SwitchModes(LoginUsernameMode, cmd), nil
@@ -118,8 +117,6 @@ func NewGameMode() *Mode {
 	return &mode
 }
 
-
-
 func LoadModes() {
 	modes = map[int]*Mode{}
 	modes[SplashMode] = NewSplashMode()
@@ -142,4 +139,3 @@ func MustGetMode(mode int) *Mode {
 	}
 	return m
 }
-

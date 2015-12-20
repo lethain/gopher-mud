@@ -2,16 +2,15 @@ package mud
 
 import (
 	"bufio"
-	"strings"
+	"github.com/lethain/gopher-mud/player"
+	"github.com/lethain/gopher-mud/telnet"
 	"log"
 	"net"
-	"github.com/lethain/gopher-mud/telnet"
-	"github.com/lethain/gopher-mud/player"
+	"strings"
 )
 
-
 type MudServer struct {
-	Loc string
+	Loc          string
 	TelnetServer *telnet.TelnetServer
 }
 
@@ -26,7 +25,7 @@ func (ms *MudServer) ListenAndServe() {
 	telnet.ListenAndServe()
 }
 
-func (ms *MudServer)  HandleConn(conn net.Conn) {
+func (ms *MudServer) HandleConn(conn net.Conn) {
 	defer conn.Close()
 	p := player.NewPlayer(conn)
 	log.Printf("[%v]\tNew connection from %v", p.ShortID(), conn.RemoteAddr())
@@ -45,7 +44,7 @@ func (ms *MudServer)  HandleConn(conn net.Conn) {
 		if !strings.HasSuffix(resp, "\n") {
 			resp += "\n"
 		}
-		
+
 		conn.Write([]byte(resp))
 		if err != nil {
 			log.Printf("[%v]\tError handling message: %v", p.ShortID(), err)

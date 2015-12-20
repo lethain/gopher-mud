@@ -1,23 +1,23 @@
 package player
 
 import (
-	"fmt"
 	"errors"
-	"strings"
-	"net"
-	"log"
+	"fmt"
 	"github.com/satori/go.uuid"
+	"log"
+	"net"
+	"strings"
 )
 
-var  Exited = errors.New("Player exited.")
+var Exited = errors.New("Player exited.")
 
 type Player struct {
-	Conn net.Conn
+	Conn     net.Conn
 	LoggedIn bool
-	Name string
-	UUID string
-	Mode *Mode
-	HP int
+	Name     string
+	UUID     string
+	Mode     *Mode
+	HP       int
 }
 
 func NewPlayer(conn net.Conn) *Player {
@@ -31,7 +31,7 @@ func LoadPlayers() {
 	PlayersByName["lethain"] = &Player{
 		Name: "lethain",
 		UUID: "9999",
-		HP: 1000,
+		HP:   1000,
 	}
 }
 
