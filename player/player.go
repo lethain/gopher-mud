@@ -59,13 +59,12 @@ func LoadModes() {
 		Name: "login",
 		Aliases: []string{"l"},
 		Func: func(p *Player, cmd string) (string, error) {
-			
-			
-			return "test test test test", nil
+			p.Mode = MustGetMode(LoginUsernameMode)
+			return p.Mode.Render(), nil
 		},
 	}
 	splashCmds = append(splashCmds, loginCmd)
-	
+
 	modes[SplashMode].Cmds = splashCmds
 }
 
@@ -75,6 +74,15 @@ func GetMode(mode int) (*Mode, error) {
 	}
 	return modes[mode], nil
 }
+
+func MustGetMode(mode int) *Mode {
+	m, err := GetMode(mode)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}
+
 
 type Player struct {
 	Conn net.Conn
@@ -111,10 +119,6 @@ func (p *Player) HandleMessage(msg string) (string, error) {
 }
 
 func (p *Player) Splash() string {
-	mode, err := GetMode(SplashMode)
-	p.Mode = mode
-	if err != nil {
-		log.Printf("error retrieving mode %v: %v", SplashMode, err)
-	}
-	return mode.Render()
+	p.Mode = MustGetMode(SplashMode)
+	return p.Mode.Render()
 }
