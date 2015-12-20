@@ -31,7 +31,7 @@ func (ms *MudServer)  HandleConn(conn net.Conn) {
 	p := player.NewPlayer(conn)
 	log.Printf("[%v]\tNew connection from %v", p.ShortID(), conn.RemoteAddr())
 
-	conn.Write([]byte(p.Splash()))
+	conn.Write([]byte(p.Start()))
 	for {
 		msg, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
