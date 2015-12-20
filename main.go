@@ -2,36 +2,47 @@ package main
 
 import (
 	"github.com/lethain/gopher-mud/telnet"
+	"github.com/lethain/gopher-mud/player"	
 	"bufio"
 	"strings"
-	"fmt"
 	"log"
 	"net"
+	"flag"
 )
+
+var loc = flag.String("loc", ":9000", "location:port to run server")
 
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
-	log.Printf("handleConn: %v", conn)
+	p := player.Player{Conn: conn}
+	log.Printf("new connection from %v", p)
+
+	conn.Write([]byte(p.Splash()))
 	for {
-		message, err := bufio.NewReader(conn).ReadString('\n')
+		msg, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			log.Printf("error reading line: %v", err)
 			continue
 		}
-		if message == "exit" {
+		msg = strings.Trim(msg, "\n\r\t ")
+		resp, err := p.HandleMessage(msg)
+
+		// always end with newline
+		if !strings.HasSuffix(resp, "\n") {
+			resp += "\n"
+		}
+		
+		conn.Write([]byte(resp))
+		if err != nil {
+			log.Printf("error handling message: %v", err)
 			return
 		}
-		log.Printf("Message Received (len %v): '%v'", len(message), message)
-
-		newmessage := strings.ToUpper(message)
-		conn.Write([]byte(fmt.Sprintf("(%v)\t%v\n", len(message), newmessage)))
 	}
-
 }
 
-
 func main() {
-	telnet := telnet.TelnetServer{Loc: ":9000", Handler: handleConn}
+	flag.Parse()
+	telnet := telnet.TelnetServer{Loc: *loc, Handler: handleConn}
 	telnet.ListenAndServe()
 }
