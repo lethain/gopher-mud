@@ -31,11 +31,12 @@ type Mode struct {
 	Desc string
 	DescFile string
 	Cmds []*Command
+	DefaultCmd *Command
 }
 
 func (m *Mode) Render() string {
 	if m.Desc == "" && m.DescFile != "" {
-		raw, err := ioutil.ReadFile("splash.txt")
+		raw, err := ioutil.ReadFile(m.DescFile)
 		if err != nil {
 			log.Printf("failed to read splash.txt: %v", err)
 			return m.Desc
@@ -59,8 +60,7 @@ func LoadModes() {
 		Name: "login",
 		Aliases: []string{"l"},
 		Func: func(p *Player, cmd string) (string, error) {
-			p.Mode = MustGetMode(LoginUsernameMode)
-			return p.Mode.Render(), nil
+			return p.SwitchModes(LoginUsernameMode, cmd), nil
 		},
 	}
 	splashCmds = append(splashCmds, loginCmd)
@@ -93,8 +93,18 @@ type Player struct {
 	HP int
 }
 
+func (p *Player) SwitchModes(mode int, cmd ...string) string {
+	p.Mode = MustGetMode(mode)
+	log.Printf("Switching to mode %v due to %v", p.Mode.Name, cmd)
+	return p.Mode.Render()
+}
+
+
+var id = 0
+
 func (p *Player) HandleMessage(msg string) (string, error) {
-	log.Printf("Msg Received (len %v): '%v'", len(msg), msg)
+	id++
+	log.Printf("[%v]\tMsg Received (len %v): '%v'", id, len(msg), msg)
 	if msg == "exit" {
 		return "See you next time.", Exited
 	}
@@ -103,12 +113,12 @@ func (p *Player) HandleMessage(msg string) (string, error) {
 		first := words[0]
 		log.Printf("Trying to match %v", first)
 		for _, cmd := range p.Mode.Cmds {
-			log.Printf("Trying to match %v to %v", first, cmd.Name)
+			log.Printf("[%v]\t(Full) Trying to match %v to %v", id, first, cmd.Name)
 			if first == cmd.Name {
 				return cmd.Func(p, msg)
 			}
 			for _, alias := range cmd.Aliases {
-				log.Printf("Trying to match %v to %v", first, alias)
+				log.Printf("[%v]\t(Alias) Trying to match %v to %v", id, first, alias)
 				if first == alias {
 					return cmd.Func(p, msg)
 				}
@@ -119,6 +129,5 @@ func (p *Player) HandleMessage(msg string) (string, error) {
 }
 
 func (p *Player) Splash() string {
-	p.Mode = MustGetMode(SplashMode)
-	return p.Mode.Render()
+	return p.SwitchModes(SplashMode)
 }
