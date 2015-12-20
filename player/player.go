@@ -7,6 +7,7 @@ import (
 	"net"
 	"log"
 	"io/ioutil"
+	"github.com/satori/go.uuid"
 )
 
 var  Exited = errors.New("Player exited.")
@@ -37,12 +38,14 @@ type Mode struct {
 	DefaultCmd CmdFunc
 }
 
-func NoValidCommand(p *Player) (string, error) {
+func NoValidCommand(p *Player, msg string) (string, error) {
 	allowed := make([]string, 0)
 	for _, cmd := range p.Mode.Cmds {
 		allowed = append(allowed, cmd.Name)
 	}
-	return "Sorry, didn't realize that command. Please try one of " + strings.Join(allowed, ", "), nil	
+	allowedCmds := strings.Join(allowed, ", ")
+	log.Printf("[%v]\tCommand %v didn't match any of %v.", p.ShortID(), msg, allowedCmds)
+	return fmt.Sprintf("Sorry, didn't recognize that command. Try one of %v.", allowedCmds), nil
 }
 
 
@@ -130,35 +133,46 @@ func MustGetMode(mode int) *Mode {
 
 type Player struct {
 	Conn net.Conn
-	Created bool
+	LoggedIn bool
 	Name string
 	UUID string
 	Mode *Mode
 	HP int
 }
 
+func NewPlayer(conn net.Conn) *Player {
+	return &Player{Conn: conn, UUID: uuid.NewV4().String(), LoggedIn: false}
+}
+
+func (p *Player) String() string {
+	return fmt.Sprintf("Player(%v)", p.UUID[:4])
+}
+
+func (p *Player) ShortID() string {
+	if p.LoggedIn {
+		return p.Name
+	} else {
+		return p.UUID[:4]
+	}
+}
+
 func (p *Player) SwitchModes(mode int, cmd ...string) string {
 	p.Mode = MustGetMode(mode)
-	log.Printf("Switching to mode %v due to %v", p.Mode.Name, cmd)
+	log.Printf("[%v]\tSwitching to mode %v due to %v", p.ShortID(), p.Mode.Name, cmd)
 	return p.Mode.Render()
 }
 
 
-var id = 0
-
 func (p *Player) HandleMessage(msg string) (string, error) {
-	id++
-	log.Printf("[%v]\tMsg Received (len %v): '%v'", id, len(msg), msg)
+	log.Printf("[%v]\tMsg Received (len %v): '%v'", p.ShortID(), len(msg), msg)
 	words := strings.Split(strings.ToLower(msg), " ")
 	if len(words) > 0 {
 		first := words[0]
 		for _, cmd := range p.Mode.Cmds {
-			log.Printf("[%v]\t(Full) Trying to match %v to %v", id, first, cmd.Name)
 			if first == cmd.Name {
 				return cmd.Func(p, msg)
 			}
 			for _, alias := range cmd.Aliases {
-				log.Printf("[%v]\t(Alias) Trying to match %v to %v", id, first, alias)
 				if first == alias {
 					return cmd.Func(p, msg)
 				}
@@ -167,7 +181,7 @@ func (p *Player) HandleMessage(msg string) (string, error) {
 		if p.Mode.DefaultCmd != nil {
 			return p.Mode.DefaultCmd(p, msg)
 		}
-		return NoValidCommand(p)
+		return NoValidCommand(p, msg)
 	}
 	return "", nil
 }

@@ -27,14 +27,14 @@ func (ms *MudServer) ListenAndServe() {
 
 func (ms *MudServer)  HandleConn(conn net.Conn) {
 	defer conn.Close()
-	p := player.Player{Conn: conn}
-	log.Printf("new connection from %v", p)
+	p := player.NewPlayer(conn)
+	log.Printf("[%v]\tNew connection from %v", p.ShortID(), conn.RemoteAddr())
 
 	conn.Write([]byte(p.Splash()))
 	for {
 		msg, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
-			log.Printf("error reading line: %v", err)
+			log.Printf("[%v]\tError reading line: %v", p.ShortID(), err)
 			continue
 		}
 		msg = strings.Trim(msg, "\n\r\t ")
@@ -47,7 +47,7 @@ func (ms *MudServer)  HandleConn(conn net.Conn) {
 		
 		conn.Write([]byte(resp))
 		if err != nil {
-			log.Printf("error handling message: %v", err)
+			log.Printf("[%v]\tError handling message: %v", p.ShortID(), err)
 			return
 		}
 	}
