@@ -19,7 +19,7 @@ const (
 	SplashMode = iota
 	LoginUsernameMode
 	LoginPasswordMode
-	NormalMode
+	GameMode
 )
 
 type Command struct {
@@ -94,23 +94,41 @@ func NewLoginUsernameMode() *Mode {
 	mode := Mode{Id: SplashMode, Name: "LoginUsername", DescFile: "login_username.txt"}
 	mode.Cmds = []*Command{NewQuitCmd()}
 	mode.DefaultCmd = func(p *Player, cmd string) (string, error) {
-		return fmt.Sprintf("arg wtf %v", cmd), nil
+		player, ok := GetPlayer(cmd)
+		if ok == false {
+			return fmt.Sprintf("Player with name %v doesn't exist yet. [Create] to go to character creation.\n%v", cmd, p.Mode.Render()), nil
+		} else {
+			p.MergePlayer(player)
+			return p.SwitchModes(LoginPasswordMode), nil
+		}
 	}
 	return &mode
 }
 
 func NewLoginPasswordMode() *Mode {
-	mode := Mode{Id: SplashMode, Name: "LoginPassword", DescFile: "login_password.txt"}
+	mode := Mode{Id: LoginPasswordMode, Name: "LoginPassword", DescFile: "login_password.txt"}
 	mode.Cmds = []*Command{NewQuitCmd()}
 	mode.DefaultCmd = func(p *Player, cmd string) (string, error) {
-		return fmt.Sprintf("arg wtf %v", cmd), nil
+		if !p.CheckPassword(cmd) {
+			return fmt.Sprintf("Sorry %v, couldn't recognize your password.", p.Name), nil
+		}
+		return p.SwitchModes(GameMode), nil
 	}
 	return &mode
 }
 
+func NewGameMode() *Mode {
+	mode := Mode{Id: GameMode, Name: "GamePassword", Desc: " GameMode!!!!!!"}
+	mode.Cmds = []*Command{NewQuitCmd()}
+	return &mode
+}
+
+
+
 func LoadModes() {
 	modes = map[int]*Mode{}
 	modes[SplashMode] = NewSplashMode()
+	modes[GameMode] = NewGameMode()
 	modes[LoginUsernameMode] = NewLoginUsernameMode()
 	modes[LoginPasswordMode] = NewLoginPasswordMode()
 }
@@ -144,22 +162,53 @@ func NewPlayer(conn net.Conn) *Player {
 	return &Player{Conn: conn, UUID: uuid.NewV4().String(), LoggedIn: false}
 }
 
+var PlayersByName map[string]*Player
+
+func LoadPlayers() {
+	PlayersByName = map[string]*Player{}
+	PlayersByName["lethain"] = &Player{
+		Name: "lethain",
+		UUID: "9999",
+		HP: 1000,
+	}
+}
+
+func GetPlayer(name string) (*Player, bool) {
+	player, ok := PlayersByName[name]
+	return player, ok
+}
+
 func (p *Player) String() string {
 	return fmt.Sprintf("Player(%v)", p.UUID[:4])
 }
 
 func (p *Player) ShortID() string {
-	if p.LoggedIn {
+	if p.Name != "" {
 		return p.Name
 	} else {
 		return p.UUID[:4]
 	}
 }
 
+func (p *Player) MergePlayer(op *Player) {
+	log.Printf("[%v]\tID %v transitioning to ID %v.", p.ShortID(), p.ShortID(), op.ShortID())
+	p.UUID = op.UUID
+	p.Name = op.Name
+	p.HP = op.HP
+}
+
 func (p *Player) SwitchModes(mode int, cmd ...string) string {
 	p.Mode = MustGetMode(mode)
 	log.Printf("[%v]\tSwitching to mode %v due to %v", p.ShortID(), p.Mode.Name, cmd)
 	return p.Mode.Render()
+}
+
+func (p *Player) CheckPassword(pwd string) bool {
+	// ok, so this clearly not a complete password check
+	if len(pwd) > 5 {
+		return true
+	}
+	return false
 }
 
 
