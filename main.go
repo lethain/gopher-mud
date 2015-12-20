@@ -1,18 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"net"
-	"log"
-	"strings"
 	"bufio"
+	"fmt"
+	"log"
+	"net"
+	"strings"
 )
 
-
 type TelnetServer struct {
-	Loc string
+	Loc      string
 	Listener net.Listener
-	Handler func(net.Conn)
+	Handler  func(net.Conn)
 }
 
 func (t *TelnetServer) ListenAndServe() {
@@ -55,6 +54,6 @@ func handleConn(conn net.Conn) {
 }
 
 func main() {
-	telnet := TelnetServer{Loc:":9000", Handler: handleConn}
+	telnet := TelnetServer{Loc: ":9000", Handler: handleConn}
 	telnet.ListenAndServe()
 }
