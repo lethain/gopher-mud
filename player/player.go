@@ -152,7 +152,6 @@ func (p *Player) HandleMessage(msg string) (string, error) {
 	words := strings.Split(strings.ToLower(msg), " ")
 	if len(words) > 0 {
 		first := words[0]
-		log.Printf("Trying to match %v", first)
 		for _, cmd := range p.Mode.Cmds {
 			log.Printf("[%v]\t(Full) Trying to match %v to %v", id, first, cmd.Name)
 			if first == cmd.Name {
