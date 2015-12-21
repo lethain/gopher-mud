@@ -58,7 +58,6 @@ func GetPlayer(name string) (*Player, bool) {
 	if err != nil {
 		return &newPlayer, false
 	}
-	log.Printf("decoded! %v", newPlayer)
 	return &newPlayer, true
 }
 

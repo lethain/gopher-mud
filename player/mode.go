@@ -92,9 +92,7 @@ func NewLoginUsernameMode() *Mode {
 		if ok == false {
 			return fmt.Sprintf("Player with name %v doesn't exist yet. [Create] to go to character creation.\n%v", cmd, p.Mode.Render()), nil
 		} else {
-			log.Print("Merge?")
 			p.MergePlayer(player)
-			log.Print("Merged!")
 			return p.SwitchModes(LoginPasswordMode), nil
 		}
 	}
