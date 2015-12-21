@@ -2,7 +2,6 @@ package player
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 )
@@ -55,12 +54,7 @@ func NewLoginUsernameMode() *Mode {
 func NewLoginPasswordMode() *Mode {
 	mode := Mode{Id: LoginPasswordMode, Name: "LoginPassword", DescFile: "login_password.txt"}
 	mode.Cmds = []*Command{NewQuitCmd()}
-	mode.DefaultCmd = func(p *Player, cmd string) (string, error) {
-		if !p.CheckPassword(cmd) {
-			return fmt.Sprintf("Sorry %v, couldn't recognize your password.", p.Name), nil
-		}
-		return p.SwitchModes(GameMode), nil
-	}
+	mode.DefaultCmd = GetPasswordFunc
 	return &mode
 }
 

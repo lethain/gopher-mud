@@ -54,3 +54,10 @@ func GetUsernameFunc(p *Player, cmd string) (string, error) {
 	p.MergePlayer(player)
 	return p.SwitchModes(LoginPasswordMode), nil
 }
+
+func GetPasswordFunc(p *Player, cmd string) (string, error) {
+	if !p.CheckPassword(cmd) {
+		return fmt.Sprintf("Sorry %v, couldn't recognize your password.", p.Name), nil
+	}
+	return p.SwitchModes(GameMode), nil
+}
