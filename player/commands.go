@@ -34,3 +34,23 @@ func NewQuitCmd() *Command {
 		},
 	}
 }
+
+func LoginCmd() *Command {
+	return &Command{
+		Name:    "login",
+		Aliases: []string{"l"},
+		Func: func(p *Player, cmd string) (string, error) {
+			return p.SwitchModes(LoginUsernameMode, cmd), nil
+		},
+	}
+
+}
+
+func GetUsernameFunc(p *Player, cmd string) (string, error) {
+	player, ok := GetPlayer(cmd)
+	if ok == false {
+		return fmt.Sprintf("Player with name %v doesn't exist yet. [Create] to go to character creation.\n%v", cmd, p.Mode.Render()), nil
+	}
+	p.MergePlayer(player)
+	return p.SwitchModes(LoginPasswordMode), nil
+}

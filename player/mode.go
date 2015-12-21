@@ -41,31 +41,14 @@ var modes map[int]*Mode
 
 func NewSplashMode() *Mode {
 	mode := Mode{Id: SplashMode, Name: "Splash", DescFile: "splash.txt"}
-	loginCmd := &Command{
-		Name:    "login",
-		Aliases: []string{"l"},
-		Func: func(p *Player, cmd string) (string, error) {
-			return p.SwitchModes(LoginUsernameMode, cmd), nil
-		},
-	}
-	splashCmds := make([]*Command, 0)
-	splashCmds = append(splashCmds, loginCmd, NewQuitCmd())
-	mode.Cmds = splashCmds
+	mode.Cmds = []*Command{LoginCmd(), NewQuitCmd()}
 	return &mode
 }
 
 func NewLoginUsernameMode() *Mode {
 	mode := Mode{Id: SplashMode, Name: "LoginUsername", DescFile: "login_username.txt"}
 	mode.Cmds = []*Command{NewQuitCmd()}
-	mode.DefaultCmd = func(p *Player, cmd string) (string, error) {
-		player, ok := GetPlayer(cmd)
-		if ok == false {
-			return fmt.Sprintf("Player with name %v doesn't exist yet. [Create] to go to character creation.\n%v", cmd, p.Mode.Render()), nil
-		} else {
-			p.MergePlayer(player)
-			return p.SwitchModes(LoginPasswordMode), nil
-		}
-	}
+	mode.DefaultCmd = GetUsernameFunc
 	return &mode
 }
 
