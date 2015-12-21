@@ -1,15 +1,15 @@
 package player
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
-	"bytes"
 	"github.com/satori/go.uuid"
 	"github.com/syndtr/goleveldb/leveldb"
 	"log"
 	"net"
 	"strings"
-	"encoding/gob"
 )
 
 var Exited = errors.New("Player exited.")
@@ -28,6 +28,7 @@ func NewPlayer(conn net.Conn) *Player {
 }
 
 var db *leveldb.DB
+
 func LoadPlayers() {
 	var err error
 	db, err = leveldb.OpenFile("path/to/db", nil)
