@@ -3,10 +3,13 @@ package player
 import (
 	"errors"
 	"fmt"
+	"bytes"
 	"github.com/satori/go.uuid"
+	"github.com/syndtr/goleveldb/leveldb"
 	"log"
 	"net"
 	"strings"
+	"encoding/gob"
 )
 
 var Exited = errors.New("Player exited.")
@@ -24,20 +27,48 @@ func NewPlayer(conn net.Conn) *Player {
 	return &Player{Conn: conn, UUID: uuid.NewV4().String(), LoggedIn: false}
 }
 
-var PlayersByName map[string]*Player
-
+var db *leveldb.DB
 func LoadPlayers() {
-	PlayersByName = map[string]*Player{}
-	PlayersByName["lethain"] = &Player{
-		Name: "lethain",
-		UUID: "9999",
-		HP:   1000,
+	var err error
+	db, err = leveldb.OpenFile("path/to/db", nil)
+	if err != nil {
+		panic(err)
 	}
 }
 
 func GetPlayer(name string) (*Player, bool) {
-	player, ok := PlayersByName[name]
-	return player, ok
+	data, err := db.Get([]byte(name), nil)
+	if err == leveldb.ErrNotFound {
+		/* Write some data for testing purposes... */
+		// this should be replaced by character creation
+		p := &Player{Name: name, UUID: uuid.NewV4().String()}
+		if err := p.Save(); err != nil {
+			log.Printf("error saving %v: %v", p, err)
+		}
+		return &Player{}, false
+	} else if err != nil {
+		log.Printf("unexpected error retrieving player: %v", err)
+		return &Player{}, false
+	}
+
+	buffer := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(buffer)
+	var newPlayer Player
+	err = dec.Decode(&newPlayer)
+	if err != nil {
+		return &newPlayer, false
+	}
+	log.Printf("decoded! %v", newPlayer)
+	return &newPlayer, true
+}
+
+func (p *Player) Save() error {
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
+	if err := enc.Encode(p); err != nil {
+		return err
+	}
+	return db.Put([]byte(p.Name), buffer.Bytes(), nil)
 }
 
 func (p *Player) String() string {
