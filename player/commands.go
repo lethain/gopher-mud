@@ -73,7 +73,25 @@ func GetPasswordFunc(p *Player, cmd string) (string, error) {
 }
 
 
-func CreateCharacterFunc(m *Mode, p *Player, cmd string) (string, error) {
-	log.Printf("CreateCharacter: %v, %v, %v", m, p, cmd)
-	return "hello", nil
+func CreateCharacterFunc(p *Player, cmd string) (string, error) {
+	log.Printf("CreateCharacter: %v, %v, %v", p.Mode, p, cmd)
+	if p.Name == "" {
+		if len(cmd) < 4 {
+			return "Name must be at least four letters long.", nil
+		}
+		_, ok := GetPlayer(cmd)
+		if ok == true {
+			return fmt.Sprintf("The name %v is already taken.", cmd), nil
+		}
+		p.Name = cmd
+	}
+
+	if p.Name != "" {
+		if err := p.Save(); err != nil {
+			log.Printf("error saving %v: %v", p, err)
+			return "Couldn't create your new character.", err
+		}
+		return p.SwitchModes(GameMode), nil
+	}
+	return p.Mode.Render(p), nil
 }

@@ -39,19 +39,12 @@ func InitDatabase() {
 
 func GetPlayer(name string) (*Player, bool) {
 	data, err := db.Get([]byte(name), nil)
-	if err == leveldb.ErrNotFound {
-		/* Write some data for testing purposes... */
-		// this should be replaced by character creation
-		p := &Player{Name: name, UUID: uuid.NewV4().String()}
-		if err := p.Save(); err != nil {
-			log.Printf("error saving %v: %v", p, err)
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			log.Printf("unexpected error retrieving player: %v", err)
 		}
 		return &Player{}, false
-	} else if err != nil {
-		log.Printf("unexpected error retrieving player: %v", err)
-		return &Player{}, false
 	}
-
 	buffer := bytes.NewBuffer(data)
 	dec := gob.NewDecoder(buffer)
 	var newPlayer Player
@@ -65,6 +58,14 @@ func GetPlayer(name string) (*Player, bool) {
 func (p *Player) Save() error {
 	var buffer bytes.Buffer
 	enc := gob.NewEncoder(&buffer)
+
+	// can't GOB the connection object, so doing this silly
+	// unset and reset maneuver
+	conn := p.Conn
+	p.Conn = nil
+	defer func() {
+		p.Conn = conn
+	}()
 	if err := enc.Encode(p); err != nil {
 		return err
 	}

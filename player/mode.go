@@ -68,9 +68,7 @@ func NewSplashMode() *Mode {
 func NewCreateCharacterMode() *Mode {
 	mode := Mode{Id: CreateCharacterMode, Name: "CreateCharacterMode", DescTemplate: "create_character.txt"}
 	mode.Cmds = []*Command{NewQuitCmd()}
-	mode.DefaultCmd = func(p *Player, cmd string) (string, error) {
-		return CreateCharacterFunc(&mode, p, cmd)
-	}
+	mode.DefaultCmd = CreateCharacterFunc
 	return &mode
 }
 
