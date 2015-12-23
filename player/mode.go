@@ -1,9 +1,11 @@
 package player
 
 import (
+	"bytes"
 	"errors"
-	"io/ioutil"
+	"fmt"
 	"log"
+	"text/template"
 )
 
 var UnknownMode = errors.New("No such mode exists.")
@@ -13,25 +15,44 @@ const (
 	LoginUsernameMode
 	LoginPasswordMode
 	GameMode
+	CreateCharacterMode
 )
 
 type Mode struct {
 	Id         int
 	Name       string
 	Desc       string
-	DescFile   string
+	DescTemplate   string
 	Cmds       []*Command
 	DefaultCmd CmdFunc
 }
 
-func (m *Mode) Render() string {
-	if m.Desc == "" && m.DescFile != "" {
-		raw, err := ioutil.ReadFile(m.DescFile)
-		if err != nil {
-			log.Printf("failed to read splash.txt: %v", err)
-			return m.Desc
+var TemplateCache = map[string]*template.Template{}
+
+func (m *Mode) String() string {
+	return fmt.Sprintf("Mode(%v)", m.Name)
+
+
+}
+
+func (m *Mode) Render(p *Player) string {
+	if m.Desc == "" && m.DescTemplate != "" {
+		tmpl, exists := TemplateCache[m.DescTemplate]
+		if !exists {
+			newTmpl, err := template.ParseFiles(m.DescTemplate)
+			if err != nil {
+				log.Printf("error loading template: %v", err)
+				return m.Desc
+			}
+			TemplateCache[m.DescTemplate] = newTmpl
+			tmpl = newTmpl
 		}
-		m.Desc = string(raw)
+		var rendered bytes.Buffer
+		err := tmpl.Execute(&rendered, p)
+		if err != nil {
+			log.Printf("error rendering template: %v", err)
+		}
+		return rendered.String()
 	}
 	return m.Desc
 }
@@ -39,20 +60,29 @@ func (m *Mode) Render() string {
 var modes map[int]*Mode
 
 func NewSplashMode() *Mode {
-	mode := Mode{Id: SplashMode, Name: "Splash", DescFile: "splash.txt"}
-	mode.Cmds = []*Command{LoginCmd(), NewQuitCmd()}
+	mode := Mode{Id: SplashMode, Name: "Splash", DescTemplate: "splash.txt"}
+	mode.Cmds = []*Command{LoginCmd(), CreateCharacterCmd(), NewQuitCmd()}
+	return &mode
+}
+
+func NewCreateCharacterMode() *Mode {
+	mode := Mode{Id: CreateCharacterMode, Name: "CreateCharacterMode", DescTemplate: "create_character.txt"}
+	mode.Cmds = []*Command{NewQuitCmd()}
+	mode.DefaultCmd = func(p *Player, cmd string) (string, error) {
+		return CreateCharacterFunc(&mode, p, cmd)
+	}
 	return &mode
 }
 
 func NewLoginUsernameMode() *Mode {
-	mode := Mode{Id: SplashMode, Name: "LoginUsername", DescFile: "login_username.txt"}
+	mode := Mode{Id: SplashMode, Name: "LoginUsername", DescTemplate: "login_username.txt"}
 	mode.Cmds = []*Command{NewQuitCmd()}
 	mode.DefaultCmd = GetUsernameFunc
 	return &mode
 }
 
 func NewLoginPasswordMode() *Mode {
-	mode := Mode{Id: LoginPasswordMode, Name: "LoginPassword", DescFile: "login_password.txt"}
+	mode := Mode{Id: LoginPasswordMode, Name: "LoginPassword", DescTemplate: "login_password.txt"}
 	mode.Cmds = []*Command{NewQuitCmd()}
 	mode.DefaultCmd = GetPasswordFunc
 	return &mode
@@ -64,19 +94,21 @@ func NewGameMode() *Mode {
 	return &mode
 }
 
-func LoadModes() {
-	modes = map[int]*Mode{}
-	modes[SplashMode] = NewSplashMode()
-	modes[GameMode] = NewGameMode()
-	modes[LoginUsernameMode] = NewLoginUsernameMode()
-	modes[LoginPasswordMode] = NewLoginPasswordMode()
-}
-
 func GetMode(mode int) (*Mode, error) {
-	if modes[mode] == nil {
+	switch mode {
+	case SplashMode:
+		return NewSplashMode(), nil
+	case GameMode:
+		return NewGameMode(), nil
+	case LoginUsernameMode:
+		return NewLoginUsernameMode(), nil
+	case LoginPasswordMode:
+		return NewLoginPasswordMode(), nil
+	case CreateCharacterMode:
+		return NewCreateCharacterMode(), nil
+	default:
 		return &Mode{}, UnknownMode
 	}
-	return modes[mode], nil
 }
 
 func MustGetMode(mode int) *Mode {

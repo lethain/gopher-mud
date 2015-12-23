@@ -46,10 +46,20 @@ func LoginCmd() *Command {
 
 }
 
+func CreateCharacterCmd() *Command {
+	return &Command{
+		Name:    "create",
+		Aliases: []string{"c"},
+		Func: func(p *Player, cmd string) (string, error) {
+			return p.SwitchModes(CreateCharacterMode, cmd), nil
+		},
+	}
+}
+
 func GetUsernameFunc(p *Player, cmd string) (string, error) {
 	player, ok := GetPlayer(cmd)
 	if ok == false {
-		return fmt.Sprintf("Player with name %v doesn't exist yet. [Create] to go to character creation.\n%v", cmd, p.Mode.Render()), nil
+		return fmt.Sprintf("Player with name %v doesn't exist yet. [Create] to go to character creation.\n%v", cmd, p.Mode.Render(p)), nil
 	}
 	p.MergePlayer(player)
 	return p.SwitchModes(LoginPasswordMode), nil
@@ -60,4 +70,10 @@ func GetPasswordFunc(p *Player, cmd string) (string, error) {
 		return fmt.Sprintf("Sorry %v, couldn't recognize your password.", p.Name), nil
 	}
 	return p.SwitchModes(GameMode), nil
+}
+
+
+func CreateCharacterFunc(m *Mode, p *Player, cmd string) (string, error) {
+	log.Printf("CreateCharacter: %v, %v, %v", m, p, cmd)
+	return "hello", nil
 }

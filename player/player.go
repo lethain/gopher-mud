@@ -29,7 +29,7 @@ func NewPlayer(conn net.Conn) *Player {
 
 var db *leveldb.DB
 
-func LoadPlayers() {
+func InitDatabase() {
 	var err error
 	db, err = leveldb.OpenFile("path/to/db", nil)
 	if err != nil {
@@ -93,7 +93,7 @@ func (p *Player) MergePlayer(op *Player) {
 func (p *Player) SwitchModes(mode int, cmd ...string) string {
 	p.Mode = MustGetMode(mode)
 	log.Printf("[%v]\tSwitching to mode %v due to %v", p.ShortID(), p.Mode.Name, cmd)
-	return p.Mode.Render()
+	return p.Mode.Render(p)
 }
 
 func (p *Player) CheckPassword(pwd string) bool {

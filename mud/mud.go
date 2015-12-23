@@ -15,9 +15,8 @@ type MudServer struct {
 }
 
 func (ms *MudServer) ListenAndServe() {
-	// setup mud
-	player.LoadModes()
-	player.LoadPlayers()
+	// setup connectino to database
+	player.InitDatabase()
 
 	// setup and run server
 	telnet := telnet.TelnetServer{Loc: ms.Loc, Handler: ms.HandleConn}
