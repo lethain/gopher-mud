@@ -1,7 +1,6 @@
-***************************
-*                         *
-* Creating new character. *
-*                         *
-**************************
+{{if not .Name}}What is your name (a-z):{{end}}{{if .Name}}Name: {{.Name}}
+Pick your race:
+     * Earther - strong and harder, used to high gravity, awkward in low gravity.
+     * Lunite  - neither proficient nor awkward in any gravity, the perfect all-rounder.
+     * Belter  - agile and quick, native to zero gravity, slow in high gravity. {{end}}
 
-What is your name (a-z):

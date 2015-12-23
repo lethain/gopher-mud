@@ -84,9 +84,20 @@ func CreateCharacterFunc(p *Player, cmd string) (string, error) {
 			return fmt.Sprintf("The name %v is already taken.", cmd), nil
 		}
 		p.Name = cmd
+	} else if p.Race == RaceNone {
+		switch strings.ToLower(cmd) {
+		case "earther":
+			p.Race = RaceEarther
+		case "lunite":
+			p.Race = RaceLunite
+		case "belter":
+			p.Race = RaceBelter
+		default:
+			return fmt.Sprintf("Race %v didn't match a valid option:  earther, lunite or belter.", cmd), nil
+		}
 	}
 
-	if p.Name != "" {
+	if p.Name != "" && p.Race != RaceNone {
 		if err := p.Save(); err != nil {
 			log.Printf("error saving %v: %v", p, err)
 			return "Couldn't create your new character.", err

@@ -14,11 +14,21 @@ import (
 
 var Exited = errors.New("Player exited.")
 
+type Race int
+const (
+	RaceNone  = iota
+	RaceEarther
+	RaceLunite
+	RaceBelter
+)
+
 type Player struct {
 	Conn     net.Conn
 	LoggedIn bool
 	Name     string
 	UUID     string
+	Level    int
+	Race     Race
 	Mode     *Mode
 	HP       int
 }
