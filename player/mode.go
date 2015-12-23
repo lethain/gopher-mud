@@ -27,7 +27,7 @@ type Mode struct {
 	DefaultCmd CmdFunc
 }
 
-var TemplateCache = map[string]*template.Template{}
+var ModeTemplateCache = map[string]*template.Template{}
 
 func (m *Mode) String() string {
 	return fmt.Sprintf("Mode(%v)", m.Name)
@@ -37,14 +37,14 @@ func (m *Mode) String() string {
 
 func (m *Mode) Render(p *Player) string {
 	if m.Desc == "" && m.DescTemplate != "" {
-		tmpl, exists := TemplateCache[m.DescTemplate]
+		tmpl, exists := ModeTemplateCache[m.DescTemplate]
 		if !exists {
 			newTmpl, err := template.ParseFiles(m.DescTemplate)
 			if err != nil {
 				log.Printf("error loading template: %v", err)
 				return m.Desc
 			}
-			TemplateCache[m.DescTemplate] = newTmpl
+			ModeTemplateCache[m.DescTemplate] = newTmpl
 			tmpl = newTmpl
 		}
 		var rendered bytes.Buffer
@@ -88,7 +88,7 @@ func NewLoginPasswordMode() *Mode {
 
 func NewGameMode() *Mode {
 	mode := Mode{Id: GameMode, Name: "GamePassword", Desc: " GameMode!!!!!!"}
-	mode.Cmds = []*Command{NewQuitCmd()}
+	mode.Cmds = []*Command{NewQuitCmd(), StatusCmd()}
 	return &mode
 }
 

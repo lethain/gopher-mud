@@ -1,0 +1,5 @@
+Name:       : {{.Name}}
+Race        : {{.RaceString}}
+Level       : {{.Level}} ({{.Exp}} out of ??? to next level)
+Hitpoints   : {{.HP}} / {{.MaxHP}}
+Skill Points: {{.SP}}

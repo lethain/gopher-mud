@@ -28,9 +28,26 @@ type Player struct {
 	Name     string
 	UUID     string
 	Level    int
+	Exp      int
 	Race     Race
 	Mode     *Mode
 	HP       int
+	MaxHP    int
+	SP       int
+
+}
+
+func (p *Player) RaceString() string {
+	switch p.Race {
+	case RaceEarther:
+		return "Earther"
+	case RaceLunite:
+		return "Lunite"
+	case RaceBelter:
+		return "Belter"
+	default:
+		return "Unknown"
+	}
 }
 
 func NewPlayer(conn net.Conn) *Player {
@@ -96,9 +113,14 @@ func (p *Player) ShortID() string {
 
 func (p *Player) MergePlayer(op *Player) {
 	log.Printf("[%v]\tID %v transitioning to ID %v.", p.ShortID(), p.ShortID(), op.ShortID())
-	p.UUID = op.UUID
 	p.Name = op.Name
+	p.UUID = op.UUID
+	p.Level = op.Level
+	p.Exp = op.Exp
+	p.Race = op.Race
 	p.HP = op.HP
+	p.MaxHP = op.MaxHP
+	p.SP = op.SP
 }
 
 func (p *Player) SwitchModes(mode int, cmd ...string) string {

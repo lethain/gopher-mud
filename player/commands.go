@@ -1,12 +1,36 @@
 package player
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"strings"
+	"text/template"
 )
 
 type CmdFunc func(*Player, string) (string, error)
+var CommandTemplateCache = map[string]*template.Template{}
+
+
+func RenderCommandTemplate(path string, p *Player) (string, error) {
+	tmpl, exists := CommandTemplateCache[path]
+	if !exists {
+		newTmpl, err := template.ParseFiles(path)
+		if err != nil {
+			log.Printf("error loading template: %v", err)
+			return "", err
+		}
+		CommandTemplateCache[path] = newTmpl
+		tmpl = newTmpl
+	}
+	var rendered bytes.Buffer
+	err := tmpl.Execute(&rendered, p)
+	if err != nil {
+		log.Printf("error rendering template: %v", err)
+		return "", err
+	}
+	return rendered.String(), nil
+}
 
 type Command struct {
 	Name    string
@@ -43,8 +67,17 @@ func LoginCmd() *Command {
 			return p.SwitchModes(LoginUsernameMode, cmd), nil
 		},
 	}
-
 }
+
+func StatusCmd() *Command {
+	return &Command{
+		Name: "status",
+		Func: func(p *Player, cmd string) (string, error) {
+			return RenderCommandTemplate("cmd_status.txt", p)
+		},
+	}
+}
+
 
 func CreateCharacterCmd() *Command {
 	return &Command{
@@ -98,6 +131,11 @@ func CreateCharacterFunc(p *Player, cmd string) (string, error) {
 	}
 
 	if p.Name != "" && p.Race != RaceNone {
+		p.Level = 1
+		p.HP = 100
+		p.MaxHP = 100
+		p.SP = 0
+		p.Exp = 0
 		if err := p.Save(); err != nil {
 			log.Printf("error saving %v: %v", p, err)
 			return "Couldn't create your new character.", err
