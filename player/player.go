@@ -125,6 +125,9 @@ func (p *Player) MergePlayer(op *Player) {
 
 func (p *Player) SwitchModes(mode int, cmd ...string) string {
 	p.Mode = MustGetMode(mode)
+	if p.Mode.InitCmd != nil {
+		p.Mode.InitCmd(p)
+	}
 	log.Printf("[%v]\tSwitching to mode %v due to %v", p.ShortID(), p.Mode.Name, cmd)
 	return p.Mode.Render(p)
 }

@@ -2,6 +2,7 @@ package player
 
 import (
 	"bytes"
+	"sync"
 	"errors"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 )
 
 var UnknownMode = errors.New("No such mode exists.")
+type InitModeFunc func(*Player)
 
 const (
 	SplashMode = iota
@@ -25,14 +27,13 @@ type Mode struct {
 	DescTemplate   string
 	Cmds       []*Command
 	DefaultCmd CmdFunc
+	InitCmd    InitModeFunc
 }
 
 var ModeTemplateCache = map[string]*template.Template{}
 
 func (m *Mode) String() string {
 	return fmt.Sprintf("Mode(%v)", m.Name)
-
-
 }
 
 func (m *Mode) Render(p *Player) string {
@@ -86,9 +87,20 @@ func NewLoginPasswordMode() *Mode {
 	return &mode
 }
 
+var GameState = struct{
+	sync.RWMutex
+	Players map[string]*Player
+}{Players: make(map[string]*Player)}
+
+
 func NewGameMode() *Mode {
 	mode := Mode{Id: GameMode, Name: "GamePassword", Desc: " GameMode!!!!!!"}
-	mode.Cmds = []*Command{NewQuitCmd(), StatusCmd()}
+	mode.Cmds = []*Command{NewQuitCmd(), StatusCmd(), WhoCmd()}
+	mode.InitCmd = func(p *Player) {
+		GameState.Lock()
+		GameState.Players[p.Name] = p
+		GameState.Unlock()
+	}
 	return &mode
 }
 

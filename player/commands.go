@@ -12,7 +12,7 @@ type CmdFunc func(*Player, string) (string, error)
 var CommandTemplateCache = map[string]*template.Template{}
 
 
-func RenderCommandTemplate(path string, p *Player) (string, error) {
+func RenderCommandTemplate(path string, p interface{}) (string, error) {
 	tmpl, exists := CommandTemplateCache[path]
 	if !exists {
 		newTmpl, err := template.ParseFiles(path)
@@ -54,6 +54,9 @@ func NewQuitCmd() *Command {
 		Name:    "quit",
 		Aliases: []string{"exit", "q"},
 		Func: func(p *Player, cmd string) (string, error) {
+			GameState.Lock()
+			delete(GameState.Players, p.Name)
+			GameState.Unlock()	
 			return "See you next time.", Exited
 		},
 	}
@@ -78,6 +81,16 @@ func StatusCmd() *Command {
 	}
 }
 
+func WhoCmd() *Command {
+	return &Command{
+		Name: "who",
+		Func: func(p *Player, cmd string) (string, error) {
+			GameState.RLock()
+			defer GameState.RUnlock()
+			return RenderCommandTemplate("cmd_who.txt", GameState)
+		},
+	}
+}
 
 func CreateCharacterCmd() *Command {
 	return &Command{

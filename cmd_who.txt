@@ -1,0 +1,3 @@
+Players:
+{{range $key, $value := .Players }}	{{$value.Name }}
+{{end}}
