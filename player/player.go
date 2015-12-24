@@ -34,7 +34,7 @@ type Player struct {
 	HP       int
 	MaxHP    int
 	SP       int
-
+	Msgs     chan string
 }
 
 func (p *Player) RaceString() string {
@@ -51,7 +51,7 @@ func (p *Player) RaceString() string {
 }
 
 func NewPlayer(conn net.Conn) *Player {
-	return &Player{Conn: conn, UUID: uuid.NewV4().String(), LoggedIn: false}
+	return &Player{Conn: conn, UUID: uuid.NewV4().String(), LoggedIn: false, Msgs: make(chan string, 10)}
 }
 
 var db *leveldb.DB
@@ -82,6 +82,17 @@ func GetPlayer(name string) (*Player, bool) {
 	return &newPlayer, true
 }
 
+func (p *Player) Logout() {
+	p.Save()
+	GameState.Lock()
+	delete(GameState.Players, p.Name)
+	close(p.Msgs)
+	p.Msgs = nil
+	GameState.Unlock()
+
+	log.Printf("[%v]\tLogged out.", p.ShortID())
+}
+
 func (p *Player) Save() error {
 	var buffer bytes.Buffer
 	enc := gob.NewEncoder(&buffer)
@@ -90,8 +101,11 @@ func (p *Player) Save() error {
 	// unset and reset maneuver
 	conn := p.Conn
 	p.Conn = nil
+	msgs := p.Msgs
+	p.Msgs = nil
 	defer func() {
 		p.Conn = conn
+		p.Msgs = msgs
 	}()
 	if err := enc.Encode(p); err != nil {
 		return err
@@ -142,8 +156,9 @@ func (p *Player) CheckPassword(pwd string) bool {
 
 func (p *Player) HandleMessage(msg string) (string, error) {
 	log.Printf("[%v]\tMsg Received (len %v): '%v'", p.ShortID(), len(msg), msg)
+	msg = strings.Trim(msg, " \t\n\r")
 	words := strings.Split(strings.ToLower(msg), " ")
-	if len(words) > 0 {
+	if len(msg) > 0 && len(words) > 0 {
 		first := words[0]
 		for _, cmd := range p.Mode.Cmds {
 			if first == cmd.Name {

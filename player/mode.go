@@ -95,7 +95,7 @@ var GameState = struct{
 
 func NewGameMode() *Mode {
 	mode := Mode{Id: GameMode, Name: "GamePassword", Desc: " GameMode!!!!!!"}
-	mode.Cmds = []*Command{NewQuitCmd(), StatusCmd(), WhoCmd()}
+	mode.Cmds = []*Command{NewQuitCmd(), StatusCmd(), WhoCmd(), GlobalCmd()}
 	mode.InitCmd = func(p *Player) {
 		GameState.Lock()
 		GameState.Players[p.Name] = p

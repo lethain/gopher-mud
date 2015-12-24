@@ -54,11 +54,28 @@ func NewQuitCmd() *Command {
 		Name:    "quit",
 		Aliases: []string{"exit", "q"},
 		Func: func(p *Player, cmd string) (string, error) {
-			GameState.Lock()
-			delete(GameState.Players, p.Name)
-			GameState.Unlock()	
+			p.Logout()
 			return "See you next time.", Exited
 		},
+	}
+}
+
+// send global message to all players in the game
+func GlobalCmd() *Command {
+	name := "global"
+	return &Command{
+		Name: name,
+		Func: func(p *Player, cmd string) (string, error) {
+			msg := fmt.Sprintf("[global] %v: %v", p.Name, cmd[len(name):])
+			GameState.RLock()
+			for _, player := range GameState.Players {
+				if player.Msgs != nil {
+					player.Msgs <- msg
+				}
+			}
+			GameState.RUnlock()
+			return "", nil
+		},	
 	}
 }
 
